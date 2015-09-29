@@ -11,29 +11,32 @@ from myhdl import Signal, ConcatSignal, intbv, fixbv, delay, always, always_comb
 from myhdl import Simulation, StopSimulation, toVerilog, toVHDL
 
 
-def DotProduct(y, a_vec, b_vec, dim, fix_min, fix_max, fix_res):
-    """Vector dot product model using fixbv type.
+def DotProduct(y, y_da_vec, y_db_vec, a_vec, b_vec, dim, fix_min, fix_max, fix_res):
+    """Vector dot product and derivative model using fixbv type.
 
     :param y: return dot(a_vec, b_vec) as fixbv
-    :param a_vec: vector of fixbv values
-    :param b_vec: vector of fixbv values
+    :param y_da_vec: return d/da dot(a_vec, b_vec) as vector of fixbv
+    :param y_db_vec: return d/db dot(a_vec, b_vec) as vector of fixbv
+    :param a_vec: vector of fixbv
+    :param b_vec: vector of fixbv
     :param dim: vector dimensionality
     :param fix_min: fixbv min value
     :param fix_max: fixbv max value
     :param fix_res: fixbv resolution
     """
     fix_width = len(a_vec) // dim
-
     fixd_min = -fix_min**2 * 2
     fixd_max = -fixd_min
     fixd_res = fix_res**2
 
+    # internal values
     a_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(dim) ]
     b_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(dim) ]
     for j in range(dim):
         a_list[j].assign(a_vec((j + 1) * fix_width, j * fix_width))
         b_list[j].assign(b_vec((j + 1) * fix_width, j * fix_width))
 
+    # modules
     @always_comb
     def dot():
         y_sum = fixbv(0.0, min=fixd_min, max=fixd_max, res=fixd_res)
@@ -42,15 +45,23 @@ def DotProduct(y, a_vec, b_vec, dim, fix_min, fix_max, fix_res):
 
         y.next = fixbv(y_sum, min=fix_min, max=fix_max, res=fix_res)
 
-    return dot
+    @always_comb
+    def dot_da():
+        y_da_vec.next = b_vec
+
+    @always_comb
+    def dot_db():
+        y_db_vec.next = a_vec
+
+    return dot, dot_da, dot_db
 
 
 # def DotProduct2(y, a_vec, b_vec, dim, fix_min, fix_max, fix_res):
 #     """Vector dot product model using fixbv casting.
 
 #     :param y: return dot(a_vec, b_vec) as double fixbv
-#     :param a_vec: vector of fixbv values
-#     :param b_vec: vector of fixbv values
+#     :param a_vec: vector of fixbv
+#     :param b_vec: vector of fixbv
 #     :param dim: vector dimensionality
 #     :param fix_min: fixbv min value
 #     :param fix_max: fixbv max value
@@ -86,18 +97,27 @@ def test_dim0(n=10, step_a=0.5, step_b=0.5):
     fix_min = -2**7
     fix_max = -fix_min
     fix_res = 2**-8
+    fix_width = 1 + 7 + 8
 
     # signals
     y = Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res))
+    y_da_vec = Signal(intbv(0)[dim * fix_width:])
+    y_db_vec = Signal(intbv(0)[dim * fix_width:])
+    y_da_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(dim) ]
+    y_db_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(dim) ]
+    for j in range(dim):
+        y_da_list[j].assign(y_da_vec((j + 1) * fix_width, j * fix_width))
+        y_db_list[j].assign(y_db_vec((j + 1) * fix_width, j * fix_width))
+
     a_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(dim) ]
-    a_vec = ConcatSignal(*a_list)
+    a_vec = ConcatSignal(*reversed(a_list))
     b_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(dim) ]
-    b_vec = ConcatSignal(*b_list)
+    b_vec = ConcatSignal(*reversed(b_list))
 
     clk = Signal(bool(0))
 
     # modules
-    dot = DotProduct(y, a_vec, b_vec, dim, fix_min, fix_max, fix_res)
+    dot = DotProduct(y, y_da_vec, y_db_vec, a_vec, b_vec, dim, fix_min, fix_max, fix_res)
 
     # test stimulus
     HALF_PERIOD = delay(5)
@@ -115,7 +135,7 @@ def test_dim0(n=10, step_a=0.5, step_b=0.5):
             b_list[0].next = fixbv(step_b * i, min=fix_min, max=fix_max, res=fix_res)
             yield clk.negedge
 
-            print "%3s a_list: %s, b_list: %s, y: %f" % (now(), [ float(a_el.val) for a_el in a_list ], [ float(b_el.val) for b_el in b_list ], y)
+            print "%3s a_list: %s, b_list: %s, y: %f, y_da: %s, y_db: %s" % (now(), [ float(el.val) for el in a_list ], [ float(el.val) for el in b_list ], y, [ float(el.val) for el in y_da_list ], [ float(el.val) for el in y_db_list ])
 
         raise StopSimulation()
 
@@ -129,17 +149,26 @@ def convert(target=toVerilog, directory="./ex-target"):
     fix_min = -2**7
     fix_max = -fix_min
     fix_res = 2**-8
+    fix_width = 1 + 7 + 8
 
     # signals
     y = Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res))
+    y_da_vec = Signal(intbv(0)[dim * fix_width:])
+    y_db_vec = Signal(intbv(0)[dim * fix_width:])
+    y_da_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(dim) ]
+    y_db_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(dim) ]
+    for j in range(dim):
+        y_da_list[j].assign(y_da_vec((j + 1) * fix_width, j * fix_width))
+        y_db_list[j].assign(y_db_vec((j + 1) * fix_width, j * fix_width))
+
     a_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(dim) ]
-    a_vec = ConcatSignal(*a_list)
+    a_vec = ConcatSignal(*reversed(a_list))
     b_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(dim) ]
-    b_vec = ConcatSignal(*b_list)
+    b_vec = ConcatSignal(*reversed(b_list))
 
     # covert to HDL code
     target.directory = directory
-    return target(DotProduct, y, a_vec, b_vec, dim, fix_min, fix_max, fix_res)
+    target(DotProduct, y, y_da_vec, y_db_vec, a_vec, b_vec, dim, fix_min, fix_max, fix_res)
 
 
 if __name__ == '__main__':
