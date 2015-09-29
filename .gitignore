@@ -1,0 +1,6 @@
+.*
+*.pyc
+*.gz
+*.tgz
+venv
+conll15st-*
