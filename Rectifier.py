@@ -77,6 +77,7 @@ def test_zero(n=10, step=0.5):
         yield clk.posedge
 
         for i in range(n):
+            # new values
             x.next = fixbv(step * i - step * n / 2.0, min=fix_min, max=fix_max, res=fix_res)
             yield clk.negedge
 

@@ -63,7 +63,7 @@ def WordContextProduct(y, y_dword_vec, y_dcontext_vec, word_embv, context_embv, 
 
 
 def test_dim0(n=10, step_word=0.5, step_context=0.5):
-    """Testing bench for word-context embeddings product model."""
+    """Testing bench around zero in dimension 0."""
 
     embedding_dim = 3
     leaky_val = 0.01
@@ -104,11 +104,12 @@ def test_dim0(n=10, step_word=0.5, step_context=0.5):
         yield clk.posedge
 
         for i in range(n):
+            # new values
             word_emb[0].next = fixbv(step_word * i - step_word * n // 2, min=fix_min, max=fix_max, res=fix_res)
             context_emb[0].next = fixbv(step_context * i, min=fix_min, max=fix_max, res=fix_res)
             yield clk.negedge
 
-            print "%3s word_emb: %s, context_emb: %s, y: %f, y_dword: %s, y_dcontext: %s" % (now(), [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ], y, [ float(el.val) for el in y_dword_list ], [ float(el.val) for el in y_dcontext_list ])
+            print "%3s word: %s, context: %s, y: %f, y_dword: %s, y_dcontext: %s" % (now(), [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ], y, [ float(el.val) for el in y_dword_list ], [ float(el.val) for el in y_dcontext_list ])
 
         raise StopSimulation()
 

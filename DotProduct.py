@@ -91,7 +91,7 @@ def DotProduct(y, y_da_vec, y_db_vec, a_vec, b_vec, dim, fix_min, fix_max, fix_r
 #     return logic
 
 def test_dim0(n=10, step_a=0.5, step_b=0.5):
-    """Testing bench for dimension 0."""
+    """Testing bench around zero in dimension 0."""
 
     dim = 3
     fix_min = -2**7
@@ -131,6 +131,7 @@ def test_dim0(n=10, step_a=0.5, step_b=0.5):
         yield clk.posedge
 
         for i in range(n):
+            # new values
             a_list[0].next = fixbv(step_a * i - step_a * n // 2, min=fix_min, max=fix_max, res=fix_res)
             b_list[0].next = fixbv(step_b * i, min=fix_min, max=fix_max, res=fix_res)
             yield clk.negedge
