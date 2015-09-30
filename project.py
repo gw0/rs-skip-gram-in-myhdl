@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Main code for RS-FPGA project.
+Main code for RS-HDL project -- design a skip-gram model with negative sampling (SGNS).
+
+$ ./project.py ex01 data/enwik8-clean.zip
 """
 __author__ = "GW [http://gw.tnode.com/] <gw.2015@tnode.com>"
 __license__ = "GPLv3+"
@@ -13,10 +15,9 @@ import resource
 import time
 import zipfile
 import numpy as np
-from myhdl import Simulation, toVerilog
 
 import data.keras_preprocessing_text as text
-#from skipgram_hdl import Stack
+from train import run
 
 
 ### Logging
@@ -132,29 +133,21 @@ if __name__ == '__main__':
     args = argp.parse_args()
 
     # defaults
-    vocab_size = 10000
-    skipgram_window_size = 4
-
-    timesteps = 100
+    vocab_size = None
+    skipgram_window_size = 1
 
     # load datasets
     log.info("load datasets")
     x_vocab, y_skipgram, doc_ids, words_all, word2id = load(args.dataset_path, vocab_size=vocab_size, skipgram_window_size=skipgram_window_size)
+    vocab_size = len(word2id)
 
-    print "x_vocab", x_vocab[0].shape, sum([ x.nbytes  for x in x_vocab ])
+    print "x_vocab:", x_vocab[0].shape, sum([ x.nbytes  for x in x_vocab ])
     if y_skipgram:
-        print "y_skipgram", y_skipgram[0].shape, sum([ y.nbytes  for y in y_skipgram ])
+        print "y_skipgram:", y_skipgram[0].shape, sum([ y.nbytes  for y in y_skipgram ])
     else:
-        print "y_skipgram", (x_vocab[0].shape[0], skipgram_window_size), "constant"
-    print "word2id", len(word2id)
+        print "y_skipgram:", (x_vocab[0].shape[0] - skipgram_window_size, skipgram_window_size), "constant"
+    print "vocab_size:", vocab_size
 
-    # instantiate hardware module
-    #inst = Stack(x_vocab, y_skipgram)
-
-    # simulate hardware module
-    #sim = Simulation(inst)
-    #sim.run(timesteps)
-
-    # convert to Verilog "Stack.v"
-    #toVerilog.directory = args.experiment_dir
-    #toVerilog(Stack, x_vocab, y_skipgram)
+    # run train driver
+    log.info("run train driver")
+    run(x_vocab, y_skipgram, vocab_size)
