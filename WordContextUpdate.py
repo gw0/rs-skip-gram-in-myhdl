@@ -14,13 +14,14 @@ from myhdl import Simulation, StopSimulation, toVerilog, toVHDL
 from WordContextProduct import WordContextProduct
 
 
-def WordContextUpdate(y, error, new_word_embv, new_context_embv, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res):
+def WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res):
     """Word-context embeddings update model.
 
     :param y: return relu(dot(word_emb, context_emb)) as fixbv
-    :param error: MSE prediction error as fixbv
+    :param error: return MSE prediction error as fixbv
     :param new_word_embv: return updated word embedding vector of fixbv
     :param new_context_embv: return updated context embedding vector of fixbv
+    :param y_actual: actual training value as fixbv
     :param word_embv: word embedding vector of fixbv
     :param context_embv: context embedding vector of fixbv
     :param embedding_dim: embedding dimensionality
@@ -34,7 +35,6 @@ def WordContextUpdate(y, error, new_word_embv, new_context_embv, word_embv, cont
 
     # internal values
     one = fixbv(1.0, min=fix_min, max=fix_max, res=fix_res)
-    y_actual = one
     rate = fixbv(rate_val, min=fix_min, max=fix_max, res=fix_res)
 
     word_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for j in range(embedding_dim) ]
@@ -104,15 +104,16 @@ def test_dim0(n=10, step_word=0.5, step_context=0.5):
         new_word_emb[j].assign(new_word_embv((j + 1) * fix_width, j * fix_width))
         new_context_emb[j].assign(new_context_embv((j + 1) * fix_width, j * fix_width))
 
+    y_actual = Signal(fixbv(1.0, min=fix_min, max=fix_max, res=fix_res))
     word_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(embedding_dim) ]
     word_embv = ConcatSignal(*reversed(word_emb))
     context_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(embedding_dim) ]
     context_embv = ConcatSignal(*reversed(context_emb))
 
-    clk = Signal(bool(0))
+    clk = Signal(bool(False))
 
     # modules
-    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
     # test stimulus
     HALF_PERIOD = delay(5)
@@ -123,22 +124,22 @@ def test_dim0(n=10, step_word=0.5, step_context=0.5):
 
     @instance
     def stimulus():
-        yield clk.posedge
+        yield clk.negedge
 
         for i in range(n):
             # new values
             word_emb[0].next = fixbv(step_word * i - step_word * n // 2, min=fix_min, max=fix_max, res=fix_res)
             context_emb[0].next = fixbv(step_context * i, min=fix_min, max=fix_max, res=fix_res)
-            yield clk.negedge
 
-            print "%3s word: %s, context: %s, y: %f, mse: %f, new_word: %s, new_context: %s" % (now(), [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ], y, error, [ float(el.val) for el in new_word_emb ], [ float(el.val) for el in new_context_emb ])
+            yield clk.negedge
+            print "%3s word: %s, context: %s, mse: %f, y: %f, new_word: %s, new_context: %s" % (now(), [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ], error, y, [ float(el.val) for el in new_word_emb ], [ float(el.val) for el in new_context_emb ])
 
         raise StopSimulation()
 
     return clk_gen, stimulus, wcupdate
 
 
-def test_converge(n=50, emb_spread=0.1, rand_seed=100):
+def test_converge(n=50, emb_spread=0.1, rand_seed=42):
     """Testing bench for covergence."""
 
     embedding_dim = 3
@@ -160,15 +161,16 @@ def test_converge(n=50, emb_spread=0.1, rand_seed=100):
         new_word_emb[j].assign(new_word_embv((j + 1) * fix_width, j * fix_width))
         new_context_emb[j].assign(new_context_embv((j + 1) * fix_width, j * fix_width))
 
+    y_actual = Signal(fixbv(1.0, min=fix_min, max=fix_max, res=fix_res))
     word_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(embedding_dim) ]
     word_embv = ConcatSignal(*reversed(word_emb))
     context_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(embedding_dim) ]
     context_embv = ConcatSignal(*reversed(context_emb))
 
-    clk = Signal(bool(0))
+    clk = Signal(bool(False))
 
     # modules
-    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
     # test stimulus
     random.seed(rand_seed)
@@ -185,21 +187,20 @@ def test_converge(n=50, emb_spread=0.1, rand_seed=100):
 
         # random initialization
         for j in range(embedding_dim):
-            word_emb[j].next = fixbv(random.uniform(-emb_spread, emb_spread), min=fix_min, max=fix_max, res=fix_res)
-            context_emb[j].next = fixbv(random.uniform(-emb_spread, emb_spread), min=fix_min, max=fix_max, res=fix_res)
-        yield clk.negedge
+            word_emb[j].next = fixbv(random.uniform(0.0, emb_spread), min=fix_min, max=fix_max, res=fix_res)
+            context_emb[j].next = fixbv(random.uniform(0.0, emb_spread), min=fix_min, max=fix_max, res=fix_res)
 
         # iterate to converge
         for i in range(n):
-            print "%4s y: %f, mse: %f, word: %s, context: %s" % (now(), y, error, [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ])
+            yield clk.negedge
+            print "%4s mse: %f, y: %f, word: %s, context: %s" % (now(), error, y, [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ])
             if error == zero:
                 break
 
-            # transfer values
+            # transfer new values
             for j in range(embedding_dim):
                 word_emb[j].next = new_word_emb[j]
                 context_emb[j].next = new_context_emb[j]
-            yield clk.negedge
 
         raise StopSimulation()
 
@@ -228,6 +229,7 @@ def convert(target=toVerilog, directory="./ex-target"):
         new_word_emb[j].assign(new_word_embv((j + 1) * fix_width, j * fix_width))
         new_context_emb[j].assign(new_context_embv((j + 1) * fix_width, j * fix_width))
 
+    y_actual = Signal(fixbv(1.0, min=fix_min, max=fix_max, res=fix_res))
     word_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(embedding_dim) ]
     word_embv = ConcatSignal(*reversed(word_emb))
     context_emb = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(embedding_dim) ]
@@ -235,7 +237,7 @@ def convert(target=toVerilog, directory="./ex-target"):
 
     # covert to HDL code
     target.directory = directory
-    target(WordContextUpdate, y, error, new_word_embv, new_context_embv, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    target(WordContextUpdate, y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
 
 if __name__ == '__main__':

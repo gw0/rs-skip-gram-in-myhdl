@@ -60,7 +60,7 @@ def test_zero(n=10, step=0.5):
 
     x = Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res))
 
-    clk = Signal(bool(0))
+    clk = Signal(bool(False))
 
     # modules
     relu = Rectifier(y, y_dx, x, leaky_val, fix_min, fix_max, fix_res)
@@ -74,13 +74,13 @@ def test_zero(n=10, step=0.5):
 
     @instance
     def stimulus():
-        yield clk.posedge
+        yield clk.negedge
 
         for i in range(n):
             # new values
             x.next = fixbv(step * i - step * n / 2.0, min=fix_min, max=fix_max, res=fix_res)
-            yield clk.negedge
 
+            yield clk.negedge
             print "%3s x: %f, y: %f, y_dx: %f" % (now(), x, y, y_dx)
 
         raise StopSimulation()

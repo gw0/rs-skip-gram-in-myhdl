@@ -114,7 +114,7 @@ def test_dim0(n=10, step_a=0.5, step_b=0.5):
     b_list = [ Signal(fixbv(0.0, min=fix_min, max=fix_max, res=fix_res)) for _ in range(dim) ]
     b_vec = ConcatSignal(*reversed(b_list))
 
-    clk = Signal(bool(0))
+    clk = Signal(bool(False))
 
     # modules
     dot = DotProduct(y, y_da_vec, y_db_vec, a_vec, b_vec, dim, fix_min, fix_max, fix_res)
@@ -128,14 +128,14 @@ def test_dim0(n=10, step_a=0.5, step_b=0.5):
 
     @instance
     def stimulus():
-        yield clk.posedge
+        yield clk.negedge
 
         for i in range(n):
             # new values
             a_list[0].next = fixbv(step_a * i - step_a * n // 2, min=fix_min, max=fix_max, res=fix_res)
             b_list[0].next = fixbv(step_b * i, min=fix_min, max=fix_max, res=fix_res)
-            yield clk.negedge
 
+            yield clk.negedge
             print "%3s a_list: %s, b_list: %s, y: %f, y_da: %s, y_db: %s" % (now(), [ float(el.val) for el in a_list ], [ float(el.val) for el in b_list ], y, [ float(el.val) for el in y_da_list ], [ float(el.val) for el in y_db_list ])
 
         raise StopSimulation()
