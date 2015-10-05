@@ -25,8 +25,8 @@ pip install six
 pip install myhdl
 pip install -e git+https://github.com/jandecaluwe/myhdl#egg=myhdl
 pushd "$SRC/myhdl"
-git remote add cfelton https://github.com/cfelton/myhdl
-git pull cfelton mep111_fixbv
+git remote add gw0 https://github.com/gw0/myhdl
+git pull gw0 mep111_fixbv
 popd
 
 echo

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Training driver for RS-HDL project -- design a skip-gram model with negative sampling (SGNS).
+Training driver for RS-MyHDL project -- design a skip-gram model with negative sampling (SGNS).
 """
 __author__ = "GW [http://gw.tnode.com/] <gw.2015@tnode.com>"
 __license__ = "GPLv3+"
@@ -11,7 +11,7 @@ import random
 from myhdl import Signal, ConcatSignal, intbv, fixbv, delay, join, always, instance, now
 from myhdl import Simulation
 
-from WordContextUpdate import WordContextUpdate
+from WordContextUpdated import WordContextUpdated
 from RamSim import RamSim
 
 
@@ -64,7 +64,7 @@ def train(x_vocab, y_skipgram, vocab_size):
     clk = Signal(bool(False))
 
     # modules
-    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    wcupdated = WordContextUpdated(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
     wram = RamSim(wram_dout, wram_din, wram_default, wram_addr, wram_rd, wram_wr, clk)
 
@@ -113,7 +113,7 @@ def train(x_vocab, y_skipgram, vocab_size):
                     word_emb[j].next = wram_dout
                     context_emb[j].next = cram_dout
 
-                # wait for word-context update to finish
+                # wait for word-context updated to finish
                 yield clk.negedge
                 print "%6s %d mse_ema: %f, mse: %f, word: %s, context: %s" % (now(), doc_pass, error_ema, error, [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ])
 
@@ -164,7 +164,7 @@ def train(x_vocab, y_skipgram, vocab_size):
                     word_emb[j].next = wram_dout
                     context_emb[j].next = cram_dout
 
-                # wait for word-context update to finish
+                # wait for word-context updated to finish
                 yield clk.negedge
                 print "%6s %d mse_ema: %f, mse: %f, word: %s, context: %s" % (now(), doc_pass, error_ema, error, [ float(el.val) for el in word_emb ], [ float(el.val) for el in context_emb ])
 
@@ -187,7 +187,7 @@ def train(x_vocab, y_skipgram, vocab_size):
                     #print "%6s wram write, word_id: %s, addr: %s, din: %s" % (now(), word_id, wram_addr, wram_din)
                     #print "%6s cram write, context_id: %s, addr: %s, din: %s" % (now(), context_id, cram_addr, cram_din)
 
-    return clk_gen, driver, wcupdate, wram, cram
+    return clk_gen, driver, wcupdated, wram, cram
 
 
 def run(x_vocab, y_skipgram, vocab_size):

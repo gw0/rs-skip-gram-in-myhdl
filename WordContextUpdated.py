@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Word-context embeddings update model.
+Word-context embeddings updated model.
 """
 __author__ = "GW [http://gw.tnode.com/] <gw.2015@tnode.com>"
 __license__ = "GPLv3+"
@@ -14,8 +14,8 @@ from myhdl import Simulation, StopSimulation, toVerilog, toVHDL
 from WordContextProduct import WordContextProduct
 
 
-def WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res):
-    """Word-context embeddings update model.
+def WordContextUpdated(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res):
+    """Word-context embeddings updated model.
 
     :param y: return relu(dot(word_emb, context_emb)) as fixbv
     :param error: return MSE prediction error as fixbv
@@ -60,7 +60,7 @@ def WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_
         error.next = fixbv(diff * diff, min=fix_min, max=fix_max, res=fix_res)
 
     @always_comb
-    def update_word():
+    def updated_word():
         diff = fixbv(y - y_actual, min=fix_min, max=fix_max, res=fix_res)
 
         for j in range(embedding_dim):
@@ -70,7 +70,7 @@ def WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_
             new_word_embv.next[(j + 1) * fix_width:j * fix_width] = new[:]
 
     @always_comb
-    def update_context():
+    def updated_context():
         diff = fixbv(y - y_actual, min=fix_min, max=fix_max, res=fix_res)
 
         for j in range(embedding_dim):
@@ -79,7 +79,7 @@ def WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_
             new = fixbv(context_emb[j] - delta, min=fix_min, max=fix_max, res=fix_res)
             new_context_embv.next[(j + 1) * fix_width:j * fix_width] = new[:]
 
-    return wcprod, mse, update_word, update_context
+    return wcprod, mse, updated_word, updated_context
 
 
 def test_dim0(n=10, step_word=0.5, step_context=0.5):
@@ -113,7 +113,7 @@ def test_dim0(n=10, step_word=0.5, step_context=0.5):
     clk = Signal(bool(False))
 
     # modules
-    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    wcupdated = WordContextUpdated(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
     # test stimulus
     HALF_PERIOD = delay(5)
@@ -136,7 +136,7 @@ def test_dim0(n=10, step_word=0.5, step_context=0.5):
 
         raise StopSimulation()
 
-    return clk_gen, stimulus, wcupdate
+    return clk_gen, stimulus, wcupdated
 
 
 def test_converge(n=50, emb_spread=0.1, rand_seed=42):
@@ -170,7 +170,7 @@ def test_converge(n=50, emb_spread=0.1, rand_seed=42):
     clk = Signal(bool(False))
 
     # modules
-    wcupdate = WordContextUpdate(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    wcupdated = WordContextUpdated(y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
     # test stimulus
     random.seed(rand_seed)
@@ -204,7 +204,7 @@ def test_converge(n=50, emb_spread=0.1, rand_seed=42):
 
         raise StopSimulation()
 
-    return clk_gen, stimulus, wcupdate
+    return clk_gen, stimulus, wcupdated
 
 
 def convert(target=toVerilog, directory="./ex-target"):
@@ -237,7 +237,7 @@ def convert(target=toVerilog, directory="./ex-target"):
 
     # covert to HDL code
     target.directory = directory
-    target(WordContextUpdate, y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
+    target(WordContextUpdated, y, error, new_word_embv, new_context_embv, y_actual, word_embv, context_embv, embedding_dim, leaky_val, rate_val, fix_min, fix_max, fix_res)
 
 
 if __name__ == '__main__':

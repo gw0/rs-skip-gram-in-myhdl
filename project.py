@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Main code for RS-HDL project -- design a skip-gram model with negative sampling (SGNS).
+Main code for RS-MyHDL project -- design a skip-gram model with negative sampling (SGNS).
 
 $ ./project.py ex01 data/enwik8-clean.zip
 """
