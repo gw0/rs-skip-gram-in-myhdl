@@ -22,12 +22,9 @@ sudo aptitude install python-numpy=1:1.8.2-2 python-scipy=0.14.0-2
 
 # Requirements
 pip install six
-pip install myhdl
-pip install -e git+https://github.com/jandecaluwe/myhdl#egg=myhdl
-pushd "$SRC/myhdl"
-git remote add gw0 https://github.com/gw0/myhdl
-git pull gw0 mep111_fixbv
-popd
+#pip install myhdl
+pip install -e git+https://github.com/gw0/myhdl.git@mep111_fixbv#egg=myhdl
+pushd "$SRC/myhdl" && git checkout mep111_fixbv && popd
 
 echo
 echo "Use: . venv/bin/activate"

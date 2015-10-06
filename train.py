@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Training driver for RS-MyHDL project -- design a skip-gram model with negative sampling (SGNS).
+Training stimulus of skip-gram model with negative sampling (SGNS).
 """
 __author__ = "GW [http://gw.tnode.com/] <gw.2015@tnode.com>"
 __license__ = "GPLv3+"
@@ -16,7 +16,7 @@ from RamSim import RamSim
 
 
 def train(x_vocab, y_skipgram, vocab_size):
-    """Train driver."""
+    """Training stimulus."""
 
     embedding_dim = 3
     leaky_val = 0.01

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Word-context embeddings updated model.
+Word-context embeddings updated model needed for skip-gram training.
 """
 __author__ = "GW [http://gw.tnode.com/] <gw.2015@tnode.com>"
 __license__ = "GPLv3+"

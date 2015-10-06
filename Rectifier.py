@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103,W0621
 """
-Rectified linear unit (ReLU) model using fixbv type.
+Rectified linear unit (ReLU) activation function model using fixbv type.
 """
 __author__ = "GW [http://gw.tnode.com/] <gw.2015@tnode.com>"
 __license__ = "GPLv3+"
