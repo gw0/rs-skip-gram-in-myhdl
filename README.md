@@ -1,12 +1,17 @@
-
 Skip-gram model (SGNS) in MyHDL
 ===============================
 
-The goal of RS-MyHDL project was to implement the **skip-gram model with negative sampling (SGNS)** in [*MyHDL*](http://www.myhdl.org/).
+Simulation ***rs-skip-gram-in-myhdl*** implements the **skip-gram model with negative sampling (SGNS)** in [*MyHDL*](http://www.myhdl.org/).
 
 Computing continuous distributed vector representations of words, also called word embeddings, is becoming increasingly important in natural language processing (NLP). T. Mikolov et al. (2013) introduced the skip-gram model for learning meaningful word embeddings in their *word2vec* tool. The model takes any text corpus as input, processes pairs of words according to an unsupervised language model, and learns the weights in a custom neural network layer (word embeddings).
 
 There have already been a few attempts at implementing classic neural networks with backpropagation in Verilog or VHDL, but none for word embeddings or in MyHDL that turns Python into a hardware description and verification language.
+
+Open source project:
+
+- <i class="fa fa-fw fa-home"></i> home: <http://gw.tnode.com/student/rs-skip-gram-in-myhdl/>
+- <i class="fa fa-fw fa-github-square"></i> github: <http://github.com/gw0/rs-skip-gram-in-myhdl/>
+- <i class="fa fa-fw fa-laptop"></i> technology: *Python*, *MyHDL* library
 
 
 Usage
@@ -23,8 +28,9 @@ Requirements:
 Installation on *Debian*/*Ubuntu* using `virtualenv`:
 
 ```bash
-$ git clone http://github.com/gw0/rs-myhdl-skipgram.git
-$ cd ./rs-myhdl-skipgram
+$ apt-get install python python-virtualenv
+$ git clone http://github.com/gw0/rs-skip-gram-in-myhdl.git
+$ cd ./rs-skip-gram-in-myhdl
 $ ./requirements.sh
 ...
 $ . venv/bin/activate
@@ -250,7 +256,7 @@ Assigning values inside your module `Foo(y_vec, a)` is more troublesome, but can
 Feedback
 ========
 
-Unfortunately development past current execution in MyHDL simulator is not planned. But in case you fix any bugs or develop new features, feel free to submit a pull request on [GitHub](http://github.com/gw0/rs-myhdl-skipgram/).
+Unfortunately development past current execution in MyHDL simulator is not planned. But in case you fix any bugs or develop new features, feel free to submit a pull request on [GitHub](http://github.com/gw0/rs-skip-gram-in-myhdl/).
 
 
 License
